@@ -27,9 +27,9 @@ func main() {
 	// get default config
 	cfg := config.GetConfig()
 
-	if _, err := os.Stat("/etc/cacheserver/config.json"); err == nil {
+	if _, err := os.Stat("/etc/cacheman/config.json"); err == nil {
 		// load config if exists
-		if err = config.LoadConfig("/etc/cacheserver/config.json"); err != nil {
+		if err = config.LoadConfig("/etc/cacheman/config.json"); err != nil {
 			log.Fatal("error loading config.json ", err.Error())
 			os.Exit(1)
 		}
