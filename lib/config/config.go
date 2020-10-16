@@ -52,7 +52,7 @@ func defaultConfig() *Config {
 
 	return &Config{
 		BindAddr:                   "0.0.0.0:8080",
-		ExpiresDefaultDurationSec:  60 * 60,
+		ExpiresDefaultDurationSec:  30 * 60,
 		ReplicationRotateEveryMs:   1000,
 		ShedulerDelExpiredEverySec: 60,
 		ShedulerExpiredQuequeSize:  1000,

@@ -1,7 +1,6 @@
 package simplecache
 
 import (
-	"log"
 	"sync"
 
 	"github.com/iaroslavscript/cacheman/lib/common"
@@ -48,7 +47,6 @@ func (c *SimpleCache) Lookup(key common.KeyInfo) (common.Record, bool) {
 // If the record has been overwriten it will not be deleted
 func (c *SimpleCache) Delete(key common.KeyInfo) {
 
-	log.Printf("receive request for deletion key %s", key.Key)
 	c.m.Lock()
 
 	if rec, ok := c.data[key.Key]; ok && rec.Expires <= key.Expires {
@@ -56,7 +54,6 @@ func (c *SimpleCache) Delete(key common.KeyInfo) {
 		// by new one and we don't need to delete it in that case.
 
 		delete(c.data, key.Key)
-		log.Printf("Deleted")
 	}
 
 	c.m.Unlock()

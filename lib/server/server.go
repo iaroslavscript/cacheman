@@ -21,135 +21,85 @@ type Server struct {
 	sched *common.Scheduler
 }
 
+func pathToKey(path string) string {
+	if len(path) > 1 {
+		return path[1:]
+	}
+
+	return ""
+}
+
+func requestInfo(start time.Time, code int, r *http.Request,
+	f string, args ...interface{}) string {
+
+	elapsed := time.Now().Sub(start)
+
+	return fmt.Sprintf("request:%s method:%s from:%s response:%d response_time:%d %s",
+		r.URL.Path,
+		r.Method,
+		r.Host,
+		code,
+		elapsed.Milliseconds(),
+		fmt.Sprintf(f, args...),
+	)
+}
+
 func (s *Server) dataHandler(w http.ResponseWriter, r *http.Request) {
 
-	log.Printf("request key:%s method:%s", r.URL.Path, r.Method)
+	start := time.Now()
 
 	if r.URL.Path == "/" {
 
 		switch r.Method {
 		case http.MethodGet:
-			s.healthHandler(w, r)
+			s.healthHandler(start, w, r)
 		case http.MethodHead:
-			s.healthHandler(w, r)
+			s.healthHandler(start, w, r)
 		default:
 			w.WriteHeader(http.StatusBadRequest)
+			log.Printf(requestInfo(start, http.StatusBadRequest, r, ""))
 		}
 	} else {
 
 		switch r.Method {
 
 		case http.MethodGet:
-			s.lookupHandler(w, r)
+			s.lookupHandler(start, w, r)
 		case http.MethodPost:
-			s.insertHandler(w, r)
+			s.insertHandler(start, w, r)
 		case http.MethodHead:
-			s.existsHandler(w, r)
+			s.existsHandler(start, w, r)
 		case http.MethodDelete:
-			s.deleteHandler(w, r)
+			s.deleteHandler(start, w, r)
 		default:
 			w.WriteHeader(http.StatusBadRequest)
+			log.Printf(requestInfo(start, http.StatusBadRequest, r, ""))
 		}
 	}
 }
 
-func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) healthHandler(t time.Time, w http.ResponseWriter, r *http.Request) {
 
-	log.Printf("health request")
 	w.WriteHeader(http.StatusOK)
+	log.Printf(requestInfo(t, http.StatusOK, r, ""))
 }
 
-func (s *Server) existsHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) existsHandler(t time.Time, w http.ResponseWriter, r *http.Request) {
 
 	key := common.KeyInfo{
 		Expires: time.Now().Unix(),
-		Key:     r.URL.Path,
+		Key:     pathToKey(r.URL.Path),
 	}
 
 	if _, ok := (*s.cache).Lookup(key); !ok {
 
-		log.Printf("cache MISS %s", key.Key)
 		http.NotFound(w, r)
+		log.Printf(requestInfo(t, http.StatusNotFound, r, ""))
 		return
 	}
 
-	log.Printf("cache HIT %s", key.Key)
 	w.WriteHeader(http.StatusOK)
-}
-
-func (s *Server) deleteHandler(w http.ResponseWriter, r *http.Request) {
-
-	key := common.KeyInfo{
-		Expires: math.MaxInt64, // remove record regardless of it's expires date
-		Key:     r.URL.Path,
-	}
-
-	log.Printf("DELETE key %s", key.Key)
-
-	(*s.cache).Delete(key)
-
-	w.WriteHeader(http.StatusOK)
-}
-
-func (s *Server) lookupHandler(w http.ResponseWriter, r *http.Request) {
-
-	key := common.KeyInfo{
-		Expires: time.Now().Unix(),
-		Key:     r.URL.Path,
-	}
-
-	rec, ok := (*s.cache).Lookup(key)
-	if !ok {
-
-		log.Printf("cache MISS %s", key.Key)
-		http.NotFound(w, r)
-		return
-	}
-
-	log.Printf("cache HIT %s", key.Key)
-
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write(rec.Value)
-}
-
-func (s *Server) insertHandler(w http.ResponseWriter, r *http.Request) {
-	key := r.URL.Path
-	var value []byte
-	var err error
-	var expires_in_sec int64
-
-	if expires_in_sec, err = s.parseHeaderContentExpires(r); err != nil {
-
-		log.Printf("error %s", err.Error())
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(err.Error()))
-		return
-	}
-
-	expires := time.Now().Unix() + expires_in_sec
-
-	if value, err = ioutil.ReadAll(r.Body); err != nil {
-		log.Printf("Received incomplete %s, size %d", err, len(value))
-	}
-
-	log.Printf("insert %s expires_sec: %d", key, expires_in_sec)
-
-	keyinfo := common.KeyInfo{
-		Expires: expires,
-		Key:     key,
-	}
-
-	rec := common.Record{
-		Expires: expires,
-		Value:   value,
-	}
-
-	(*s.cache).Insert(keyinfo, rec)
-	(*s.repl).Add(*common.NewReplItem(0, keyinfo, rec))
-	(*s.sched).Add(keyinfo)
-
-	w.WriteHeader(http.StatusOK)
+	log.Printf(requestInfo(t, http.StatusOK, r, ""))
 }
 
 func (s *Server) parseHeaderContentExpires(r *http.Request) (int64, error) {
@@ -183,6 +133,89 @@ func (s *Server) parseHeaderContentExpires(r *http.Request) (int64, error) {
 	}
 
 	return expires_in_sec, e
+}
+
+func (s *Server) deleteHandler(t time.Time, w http.ResponseWriter, r *http.Request) {
+
+	key := common.KeyInfo{
+		Expires: math.MaxInt64, // remove record regardless of it's expires date
+		Key:     pathToKey(r.URL.Path),
+	}
+
+	(*s.cache).Delete(key)
+	w.WriteHeader(http.StatusOK)
+	log.Printf(requestInfo(t, http.StatusOK, r, ""))
+}
+
+func (s *Server) lookupHandler(t time.Time, w http.ResponseWriter, r *http.Request) {
+
+	key := common.KeyInfo{
+		Expires: time.Now().Unix(),
+		Key:     pathToKey(r.URL.Path),
+	}
+
+	rec, ok := (*s.cache).Lookup(key)
+	if !ok {
+
+		http.NotFound(w, r)
+		log.Printf(requestInfo(t, http.StatusNotFound, r, ""))
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write(rec.Value)
+	log.Printf(requestInfo(t, http.StatusOK, r, "value_size:%d", len(rec.Value)))
+}
+
+func (s *Server) insertHandler(t time.Time, w http.ResponseWriter, r *http.Request) {
+	key := pathToKey(r.URL.Path)
+	var value []byte
+	var err error
+	var expires_in_sec int64
+
+	if expires_in_sec, err = s.parseHeaderContentExpires(r); err != nil {
+
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		log.Printf(requestInfo(t, http.StatusBadRequest, r, "error:%s", err.Error()))
+		return
+	}
+
+	expires := time.Now().Unix() + expires_in_sec
+
+	if value, err = ioutil.ReadAll(r.Body); err != nil {
+		value_n := len(value)
+		msg := fmt.Sprintf("Received incomplete %s, size %d",
+			err.Error(),
+			value_n,
+		)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(msg))
+		log.Printf(requestInfo(t, http.StatusBadRequest, r,
+			"error:'%s' size: %d",
+			msg,
+			value_n,
+		))
+		return
+	}
+
+	keyinfo := common.KeyInfo{
+		Expires: expires,
+		Key:     key,
+	}
+
+	rec := common.Record{
+		Expires: expires,
+		Value:   value,
+	}
+
+	(*s.cache).Insert(keyinfo, rec)
+	(*s.repl).Add(*common.NewReplItem(0, keyinfo, rec))
+	(*s.sched).Add(keyinfo)
+
+	log.Printf(requestInfo(t, http.StatusOK, r, "expires_sec:%d", expires_in_sec))
+	w.WriteHeader(http.StatusOK)
 }
 
 func NewServer(cfg *config.Config, cache common.Cache,

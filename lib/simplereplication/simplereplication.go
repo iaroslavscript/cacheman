@@ -38,7 +38,7 @@ func (s *SimpleReplication) Add(item common.ReplItem) {
 	s.m.Lock()
 	defer s.m.Unlock()
 
-	s.NextLog.Data = append(s.CurrLog.Data, item)
+	s.NextLog.Data = append(s.NextLog.Data, item)
 }
 
 func (s *SimpleReplication) Start() {
@@ -60,19 +60,28 @@ func (s *SimpleReplication) Close() {
 }
 
 func (s *SimpleReplication) tick() {
+
+	nextlog_n := len(s.NextLog.Data)
+
+	if nextlog_n == 0 {
+		return
+	}
+
 	s.m.Lock()
 	defer s.m.Unlock()
 
-	s.OldLog.Info.Id = s.CurrLog.Info.Id
-	s.CurrLog.Info.Id = s.NextLog.Info.Id
-	s.NextLog.Info.Id = s.NextLog.Info.Id + 1
+	s.OldLog.Info.Id++
+	s.CurrLog.Info.Id++
+	s.NextLog.Info.Id++
 
 	s.OldLog.Data = append(s.OldLog.Data, s.CurrLog.Data...)
 	s.CurrLog.Data = make([]common.ReplItem, len(s.NextLog.Data))
 	copy(s.CurrLog.Data, s.NextLog.Data)
-	s.NextLog.Data = make([]common.ReplItem, 0)
 
-	log.Printf("replication rotaion log %d ready. Size %d %d",
+	// the next log could be at least as big as it was before
+	s.NextLog.Data = make([]common.ReplItem, 0, nextlog_n)
+
+	log.Printf("replication_log:%d buckets_sizes:[%d, %d]",
 		s.CurrLog.Info.Id,
 		len(s.OldLog.Data),
 		len(s.CurrLog.Data),
