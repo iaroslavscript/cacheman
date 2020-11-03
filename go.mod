@@ -16,7 +16,6 @@ replace github.com/iaroslavscript/cacheman/lib/simplescheduler => ./lib/simplesc
 
 require (
 	github.com/iaroslavscript/cacheman/lib/config v0.0.0-00010101000000-000000000000
-	github.com/iaroslavscript/cacheman/lib/sdk v0.0.0-00010101000000-000000000000 // indirect
 	github.com/iaroslavscript/cacheman/lib/server v0.0.0-00010101000000-000000000000
 	github.com/iaroslavscript/cacheman/lib/simplecache v0.0.0-00010101000000-000000000000
 	github.com/iaroslavscript/cacheman/lib/simplereplication v0.0.0-00010101000000-000000000000
