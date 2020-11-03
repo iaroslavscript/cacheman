@@ -10,15 +10,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/iaroslavscript/cacheman/lib/common"
 	"github.com/iaroslavscript/cacheman/lib/config"
+	"github.com/iaroslavscript/cacheman/lib/sdk"
 )
 
 type Server struct {
-	cache *common.Cache
+	cache *sdk.Cache
 	cfg   *config.Config
-	repl  *common.Replication
-	sched *common.Scheduler
+	repl  *sdk.Replication
+	sched *sdk.Scheduler
 }
 
 func pathToKey(path string) string {
@@ -86,7 +86,7 @@ func (s *Server) healthHandler(t time.Time, w http.ResponseWriter, r *http.Reque
 
 func (s *Server) existsHandler(t time.Time, w http.ResponseWriter, r *http.Request) {
 
-	key := common.KeyInfo{
+	key := sdk.KeyInfo{
 		Expires: time.Now().Unix(),
 		Key:     pathToKey(r.URL.Path),
 	}
@@ -137,7 +137,7 @@ func (s *Server) parseHeaderContentExpires(r *http.Request) (int64, error) {
 
 func (s *Server) deleteHandler(t time.Time, w http.ResponseWriter, r *http.Request) {
 
-	key := common.KeyInfo{
+	key := sdk.KeyInfo{
 		Expires: math.MaxInt64, // remove record regardless of it's expires date
 		Key:     pathToKey(r.URL.Path),
 	}
@@ -149,7 +149,7 @@ func (s *Server) deleteHandler(t time.Time, w http.ResponseWriter, r *http.Reque
 
 func (s *Server) lookupHandler(t time.Time, w http.ResponseWriter, r *http.Request) {
 
-	key := common.KeyInfo{
+	key := sdk.KeyInfo{
 		Expires: time.Now().Unix(),
 		Key:     pathToKey(r.URL.Path),
 	}
@@ -200,26 +200,26 @@ func (s *Server) insertHandler(t time.Time, w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	keyinfo := common.KeyInfo{
+	keyinfo := sdk.KeyInfo{
 		Expires: expires,
 		Key:     key,
 	}
 
-	rec := common.Record{
+	rec := sdk.Record{
 		Expires: expires,
 		Value:   value,
 	}
 
 	(*s.cache).Insert(keyinfo, rec)
-	(*s.repl).Add(*common.NewReplItem(0, keyinfo, rec))
+	(*s.repl).Add(*sdk.NewReplItem(0, keyinfo, rec))
 	(*s.sched).Add(keyinfo)
 
 	log.Printf(requestInfo(t, http.StatusOK, r, "expires_sec:%d", expires_in_sec))
 	w.WriteHeader(http.StatusOK)
 }
 
-func NewServer(cfg *config.Config, cache common.Cache,
-	repl common.Replication, sched common.Scheduler) *Server {
+func NewServer(cfg *config.Config, cache sdk.Cache,
+	repl sdk.Replication, sched sdk.Scheduler) *Server {
 
 	return &Server{
 		cache: &cache,

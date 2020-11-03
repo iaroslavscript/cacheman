@@ -3,24 +3,24 @@ package simplecache
 import (
 	"sync"
 
-	"github.com/iaroslavscript/cacheman/lib/common"
+	"github.com/iaroslavscript/cacheman/lib/sdk"
 )
 
 type SimpleCache struct {
-	data map[string]common.Record
+	data map[string]sdk.Record
 	done chan bool
 	m    sync.RWMutex
 }
 
 func NewSimpleCache() *SimpleCache {
 	return &SimpleCache{
-		data: make(map[string]common.Record),
+		data: make(map[string]sdk.Record),
 		done: make(chan bool),
 	}
 }
 
 // Insert a new record or overwrite existed one.
-func (c *SimpleCache) Insert(key common.KeyInfo, rec common.Record) {
+func (c *SimpleCache) Insert(key sdk.KeyInfo, rec sdk.Record) {
 	c.m.Lock()
 	c.data[key.Key] = rec
 	c.m.Unlock()
@@ -28,7 +28,7 @@ func (c *SimpleCache) Insert(key common.KeyInfo, rec common.Record) {
 
 // Search for record equal to KeyInfo.Key which is not expired at the moment
 // of KeyInfo.Expires
-func (c *SimpleCache) Lookup(key common.KeyInfo) (common.Record, bool) {
+func (c *SimpleCache) Lookup(key sdk.KeyInfo) (sdk.Record, bool) {
 	c.m.RLock()
 	rec, ok := c.data[key.Key]
 	c.m.RUnlock()
@@ -45,7 +45,7 @@ func (c *SimpleCache) Lookup(key common.KeyInfo) (common.Record, bool) {
 
 // Delete record specified by key.Key
 // If the record has been overwriten it will not be deleted
-func (c *SimpleCache) Delete(key common.KeyInfo) {
+func (c *SimpleCache) Delete(key sdk.KeyInfo) {
 
 	c.m.Lock()
 
@@ -61,7 +61,7 @@ func (c *SimpleCache) Delete(key common.KeyInfo) {
 
 // Reading records from chan and call Expired func.
 // Should be run in a separete goroutine
-func (c *SimpleCache) WatchSheduler(sched common.Scheduler) {
+func (c *SimpleCache) WatchSheduler(sched sdk.Scheduler) {
 	for {
 		select {
 		case keyinfo := <-*sched.GetChan():
