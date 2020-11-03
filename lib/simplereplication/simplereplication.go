@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iaroslavscript/cacheman/lib/common"
 	"github.com/iaroslavscript/cacheman/lib/config"
+	"github.com/iaroslavscript/cacheman/lib/sdk"
 )
 
 type SimpleReplication struct {
@@ -14,9 +14,9 @@ type SimpleReplication struct {
 	m     sync.RWMutex
 	timer *time.Ticker
 
-	CurrLog common.ReplLog
-	NextLog common.ReplLog
-	OldLog  common.ReplLog
+	CurrLog sdk.ReplLog
+	NextLog sdk.ReplLog
+	OldLog  sdk.ReplLog
 }
 
 func NewSimpleReplication(cfg *config.Config) *SimpleReplication {
@@ -34,7 +34,7 @@ func NewSimpleReplication(cfg *config.Config) *SimpleReplication {
 	return &repl
 }
 
-func (s *SimpleReplication) Add(item common.ReplItem) {
+func (s *SimpleReplication) Add(item sdk.ReplItem) {
 	s.m.Lock()
 	defer s.m.Unlock()
 
@@ -75,11 +75,11 @@ func (s *SimpleReplication) tick() {
 	s.NextLog.Info.Id++
 
 	s.OldLog.Data = append(s.OldLog.Data, s.CurrLog.Data...)
-	s.CurrLog.Data = make([]common.ReplItem, len(s.NextLog.Data))
+	s.CurrLog.Data = make([]sdk.ReplItem, len(s.NextLog.Data))
 	copy(s.CurrLog.Data, s.NextLog.Data)
 
 	// the next log could be at least as big as it was before
-	s.NextLog.Data = make([]common.ReplItem, 0, nextlog_n)
+	s.NextLog.Data = make([]sdk.ReplItem, 0, nextlog_n)
 
 	log.Printf("replication_log:%d buckets_sizes:[%d, %d]",
 		s.CurrLog.Info.Id,

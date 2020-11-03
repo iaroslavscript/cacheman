@@ -1,4 +1,4 @@
-package common
+package sdk
 
 type KeyInfo struct {
 	Expires int64

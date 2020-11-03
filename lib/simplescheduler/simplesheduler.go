@@ -5,12 +5,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/iaroslavscript/cacheman/lib/common"
 	"github.com/iaroslavscript/cacheman/lib/config"
+	"github.com/iaroslavscript/cacheman/lib/sdk"
 )
 
 type SimpleExpirer struct {
-	C         chan common.KeyInfo
+	C         chan sdk.KeyInfo
 	cfg       *config.Config
 	done      chan bool
 	m         sync.Mutex
@@ -22,7 +22,7 @@ func NewSimpleExpirer(cfg *config.Config) *SimpleExpirer {
 
 	d := time.Duration(cfg.ShedulerDelExpiredEverySec) * time.Second
 	x := &SimpleExpirer{
-		C:         make(chan common.KeyInfo, cfg.ShedulerExpiredQuequeSize),
+		C:         make(chan sdk.KeyInfo, cfg.ShedulerExpiredQuequeSize),
 		cfg:       cfg,
 		done:      make(chan bool),
 		timer:     time.NewTicker(d),
@@ -34,7 +34,7 @@ func NewSimpleExpirer(cfg *config.Config) *SimpleExpirer {
 	return x
 }
 
-func (s *SimpleExpirer) Add(key common.KeyInfo) {
+func (s *SimpleExpirer) Add(key sdk.KeyInfo) {
 
 	// round expires time to the next sheduler tick
 	expires := (key.Expires/s.cfg.ShedulerDelExpiredEverySec + 1) * s.cfg.ShedulerDelExpiredEverySec
@@ -66,7 +66,7 @@ func (s *SimpleExpirer) Close() {
 	s.done <- true
 }
 
-func (s *SimpleExpirer) GetChan() *chan common.KeyInfo {
+func (s *SimpleExpirer) GetChan() *chan sdk.KeyInfo {
 	return &s.C
 }
 
@@ -79,7 +79,7 @@ func (s *SimpleExpirer) tick() {
 	for (s.timetable.Len() > 0) && (s.timetable[0].priority <= t) {
 		item := heap.Pop(&s.timetable).(*schedHeapItem)
 
-		s.C <- common.KeyInfo{
+		s.C <- sdk.KeyInfo{
 			Expires: item.priority,
 			Key:     item.value,
 		}

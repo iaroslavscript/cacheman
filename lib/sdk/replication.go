@@ -1,4 +1,4 @@
-package common
+package sdk
 
 type LogInfo struct {
 	Id   int64
