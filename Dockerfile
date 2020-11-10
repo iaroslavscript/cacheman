@@ -20,6 +20,6 @@ EXPOSE 8080
 # server replication port
 EXPOSE 8000
 
+VOLUME /etc/cacheman
 
 ENTRYPOINT ["/usr/bin/cacheman"]
-
