@@ -3,8 +3,8 @@
 ## Intro
 
 **CacheMan** is easy to use in-memory key-value storage server.
-Server supports asynchronius replication. Current release works only in m*ster-mode,
-sl*ve-mode is on the way.
+Server supports asynchronius replication. Current release works only in m\*ster-mode,
+sl\*ve-mode is on the way.
 
 ## Usage
 
@@ -22,15 +22,15 @@ If file is absent the default settings are used.
 And example of config.json together with default values is availible at 
 [https://github.com/iaroslavscript/cacheman/blob/main/config.json](https://github.com/iaroslavscript/cacheman/blob/main/config.json)
 
-* `bind_addr` string - http server bind address. (default *"0.0.0.0:8080"*)
-* `expires_default_duration_sec` int - The default time for storing records in seconds (default *1800*)
-* `replication_rotate_every_ms` int - The period of rotation replication log in milliseconds (default *1000*)
-* `sheduler_del_expired_every_sec` int - The period of running deletion of expired records (default *60*)
-* `sheduler_expired_queque_size` int - The maximum records for deleteion in queue (default *1000*)
+* `bind_addr` string - http server bind address. (default **"0.0.0.0:8080"**)
+* `expires_default_duration_sec` int - The default time for storing records in seconds (default **1800**)
+* `replication_rotate_every_ms` int - The period of rotation replication log in milliseconds (default **1000**)
+* `sheduler_del_expired_every_sec` int - The period of running deletion of expired records (default **60**)
+* `sheduler_expired_queque_size` int - The maximum records for deleteion in queue (default **1000**)
 
 ### RestAPI
 
-* `HEAD hostname:port/` - heath check-in. Responces with *200 OK* 
+* `HEAD hostname:port/` - heath check-in. Responces with **200 OK**
 * `HEAD hostname:port/somekey` - Check key exists.
   * Responses with **200 OK** if key *somekey* exists.
   * Responses with **404 page not found** means key *somekey* is not present in storage or expired 
@@ -99,9 +99,42 @@ Content-Length: 19
 404 page not found
 ```
 
-## Release notes
+## Release notes cacheman
+
+### v0.1.2
+* package **lib/common** renamed to **lib/sdk**
+* new dependency **lib/sdk v0.1.0**
 
 ### v0.1.1
 * bug fixes with rotating replication buckets
 * more detailed log messages
 * improved readme
+
+### v0.1.0
+* First release
+* New dependency **lib/config v0.0.0**
+* New dependency **lib/common v0.0.0**
+* New dependency **lib/server v0.0.0**
+* New dependency **lib/simplecache v0.0.0**
+* New dependency **lib/simplescheduler v0.0.0**
+* New dependency **lib/simplereplication v0.0.0**
+
+## Release notes lib/sdk
+
+### lib/sdk v0.1.0
+* first release
+
+## Release notes lib/config
+not released yet
+
+## Release notes lib/server
+not released yet
+
+## Release notes lib/simplecache
+not released yet
+
+## Release notes lib/simplescheduler
+not released yet
+
+## Release notes lib/simplereplication
+not released yet
