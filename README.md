@@ -45,9 +45,26 @@ And example of config.json together with default values is availible at
 * `DELETE hostname:port/somekey` - Delete key from storage.
   * Responses with **200 OK** even if key *somekey* was not found
 
+### Exposed metrics
+
+* `cacheman_cache_api_requests_total` **counter** The total number of requests to cache API
+* `cacheman_cache_cache_usage_bytes` **gauge** The size of cache in bytes
+* `cacheman_cache_keys_total` **gauge** The total number of keys stored in cache
+* `cacheman_repl_api_requests_total` **counter** The total number of requests to replication API
+* `cacheman_repl_binlog_bytes` **counter** The size of binary logs in bytes grouped by log type
+  * label `type` defines types of binary log. The only available values is **old**
+* `cacheman_repl_binlog_records_total` **counter** The total number of records in binary logs grouped by log type
+  * label `type` defines types of binary log. The only available value is **old**
+* `cacheman_repl_binlogs_total` **counter** The total number of binary logs
+* `cacheman_sched_api_requests_total` **counter** The total number of requests to scheduler API
+* `cacheman_sched_records_total` **gauge** The number of records are sheduled for expiring
+* `cacheman_sched_triggered_total` **counter** The number of times sheduled is triggered
+* `cacheman_server_api_requests_total` **counter** The total number of processed events
+
 ## Run in docker
 
 ### Building docker image
+
 ```
 user@pc:~$ mkdir -p src/cacheman
 user@pc:~$ cd src/cacheman

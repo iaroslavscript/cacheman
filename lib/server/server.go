@@ -12,13 +12,19 @@ import (
 
 	"github.com/iaroslavscript/cacheman/lib/config"
 	"github.com/iaroslavscript/cacheman/lib/sdk"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+const metricsSubsystem = "server"
+
 type Server struct {
-	cache *sdk.Cache
-	cfg   *config.Config
-	repl  *sdk.Replication
-	sched *sdk.Scheduler
+	cache               *sdk.Cache
+	cfg                 *config.Config
+	repl                *sdk.Replication
+	sched               *sdk.Scheduler
+	opsApiRequestsTotal prometheus.Counter
 }
 
 func pathToKey(path string) string {
@@ -47,6 +53,7 @@ func requestInfo(start time.Time, code int, r *http.Request,
 func (s *Server) dataHandler(w http.ResponseWriter, r *http.Request) {
 
 	start := time.Now()
+	s.opsApiRequestsTotal.Inc()
 
 	if r.URL.Path == "/" {
 
@@ -142,6 +149,11 @@ func (s *Server) deleteHandler(t time.Time, w http.ResponseWriter, r *http.Reque
 		Key:     pathToKey(r.URL.Path),
 	}
 
+	// We need to delete only if keys was found to avoid overpopulation of
+	// replication log's bucket.
+	// It's better to move it to cache or because we missing sheduler deletion
+	//(*s.repl).Delete(*sdk.NewReplItem(0, keyinfo, rec))
+
 	(*s.cache).Delete(key)
 	w.WriteHeader(http.StatusOK)
 	log.Printf(requestInfo(t, http.StatusOK, r, ""))
@@ -221,12 +233,22 @@ func (s *Server) insertHandler(t time.Time, w http.ResponseWriter, r *http.Reque
 func NewServer(cfg *config.Config, cache sdk.Cache,
 	repl sdk.Replication, sched sdk.Scheduler) *Server {
 
-	return &Server{
+	s := Server{
 		cache: &cache,
 		cfg:   cfg,
 		repl:  &repl,
 		sched: &sched,
+		opsApiRequestsTotal: promauto.NewCounter(prometheus.CounterOpts{
+			Namespace: sdk.MetricsNamespace,
+			Subsystem: metricsSubsystem,
+			Name:      "api_requests_total",
+			Help:      "The total number of processed events",
+		}),
 	}
+
+	s.opsApiRequestsTotal.Add(0.0)
+
+	return &s
 }
 
 func (s *Server) Serve() error {
