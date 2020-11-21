@@ -217,13 +217,10 @@ func (s *Server) insertHandler(t time.Time, w http.ResponseWriter, r *http.Reque
 		Key:     key,
 	}
 
-	rec := sdk.Record{
-		Expires: expires,
-		Value:   value,
-	}
+	rec := sdk.NewRecord(expires, value) // TODO remove unnessasery copy of []bytes here
 
-	(*s.cache).Insert(keyinfo, rec)
-	(*s.repl).Add(*sdk.NewReplItem(0, keyinfo, rec))
+	(*s.cache).Insert(keyinfo, *rec)                  // TODO remove unnessasery copy of []bytes here
+	(*s.repl).Add(*sdk.NewReplItem(0, keyinfo, *rec)) // TODO remove unnessasery copy of []bytes here
 	(*s.sched).Add(keyinfo)
 
 	log.Printf(requestInfo(t, http.StatusOK, r, "expires_sec:%d", expires_in_sec))

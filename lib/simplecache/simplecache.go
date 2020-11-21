@@ -58,6 +58,7 @@ func NewSimpleCache() *SimpleCache {
 }
 
 // Insert a new record or overwrite existed one.
+// TODO remove unnessasery copy of []bytes here
 func (c *SimpleCache) Insert(key sdk.KeyInfo, rec sdk.Record) {
 
 	c.opsApiRequestsTotal.Inc()
@@ -74,6 +75,7 @@ func (c *SimpleCache) Insert(key sdk.KeyInfo, rec sdk.Record) {
 
 // Search for record equal to KeyInfo.Key which is not expired at the moment
 // of KeyInfo.Expires
+// TODO remove unnessasery copy of []bytes here
 func (c *SimpleCache) Lookup(key sdk.KeyInfo) (sdk.Record, bool) {
 
 	c.opsApiRequestsTotal.Inc()

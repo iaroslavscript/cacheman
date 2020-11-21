@@ -24,6 +24,7 @@ And example of config.json together with default values is availible at
 
 * `bind_addr` string - http server bind address. (default **"0.0.0.0:8080"**)
 * `expires_default_duration_sec` int - The default time for storing records in seconds (default **1800**)
+* `replication_active_queque_size` int - The size of queue of active (most resent) binary log (default **50000**)
 * `replication_rotate_every_ms` int - The period of rotation replication log in milliseconds (default **1000**)
 * `sheduler_del_expired_every_sec` int - The period of running deletion of expired records (default **60**)
 * `sheduler_expired_queque_size` int - The maximum records for deleteion in queue (default **1000**)

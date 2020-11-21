@@ -8,11 +8,12 @@ import (
 
 //type config struct { // TODO
 type Config struct {
-	BindAddr                   string `json:"bind_addr"`
-	ExpiresDefaultDurationSec  int64  `json:"expires_default_duration_sec"`
-	ReplicationRotateEveryMs   int64  `json:"replication_rotate_every_ms"`
-	ShedulerDelExpiredEverySec int64  `json:"sheduler_del_expired_every_sec"`
-	ShedulerExpiredQuequeSize  int64  `json:"sheduler_expired_queque_size"`
+	BindAddr                    string `json:"bind_addr"`
+	ExpiresDefaultDurationSec   int64  `json:"expires_default_duration_sec"`
+	ReplicationActiveQuequeSize int64  `json:"replication_active_queque_size"`
+	ReplicationRotateEveryMs    int64  `json:"replication_rotate_every_ms"`
+	ShedulerDelExpiredEverySec  int64  `json:"sheduler_del_expired_every_sec"`
+	ShedulerExpiredQuequeSize   int64  `json:"sheduler_expired_queque_size"`
 }
 
 var instance *Config
@@ -51,11 +52,12 @@ func Validate() error {
 func defaultConfig() *Config {
 
 	return &Config{
-		BindAddr:                   "0.0.0.0:8080",
-		ExpiresDefaultDurationSec:  30 * 60,
-		ReplicationRotateEveryMs:   1000,
-		ShedulerDelExpiredEverySec: 60,
-		ShedulerExpiredQuequeSize:  1000,
+		BindAddr:                    "0.0.0.0:8080",
+		ExpiresDefaultDurationSec:   30 * 60,
+		ReplicationActiveQuequeSize: 50000,
+		ReplicationRotateEveryMs:    1000,
+		ShedulerDelExpiredEverySec:  60,
+		ShedulerExpiredQuequeSize:   1000,
 	}
 }
 
