@@ -74,9 +74,9 @@ func NewSimpleReplication(cfg *config.Config) *SimpleReplication {
 		timer: time.NewTicker(d),
 	}
 
-	repl.CurrLog.Info.Id = 2
+	repl.NextLog.Info.Id = 2
 	repl.CurrLog.Info.Id = 1
-	repl.CurrLog.Info.Id = 0
+	repl.OldLog.Info.Id = 0
 
 	// Init counter
 	repl.opsApiRequestsTotal.Add(0.0)
