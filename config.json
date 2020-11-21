@@ -1,6 +1,7 @@
 {
 	"bind_addr":                   "0.0.0.0:8080",
     "expires_default_duration_sec":  1800,
+    "replication_active_queque_size": 50000,
     "replication_rotate_every_ms":   1000,
     "sheduler_del_expired_every_sec":  60,
     "sheduler_expired_queque_size": 1000

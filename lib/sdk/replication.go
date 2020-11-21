@@ -20,6 +20,7 @@ type Replication interface {
 	Add(item ReplItem)
 }
 
+// TODO remove unnessasery copy of []bytes here
 func NewReplItem(action int8, key KeyInfo, value Record) *ReplItem {
 	return &ReplItem{
 		Action: action,

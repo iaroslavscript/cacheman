@@ -14,11 +14,14 @@ import (
 
 const metricsSubsystem = "repl"
 const binlogTypeOld = "old"
+const QueueFullTimeoutMs = 100
 
 type SimpleReplication struct {
 	done  chan bool
 	m     sync.RWMutex
 	timer *time.Ticker
+
+	activeData chan sdk.ReplItem
 
 	CurrLog sdk.ReplLog
 	NextLog sdk.ReplLog
@@ -34,7 +37,8 @@ func NewSimpleReplication(cfg *config.Config) *SimpleReplication {
 
 	d := time.Duration(cfg.ReplicationRotateEveryMs) * time.Millisecond
 	repl := SimpleReplication{
-		done: make(chan bool),
+		done:       make(chan bool),
+		activeData: make(chan sdk.ReplItem, cfg.ReplicationActiveQuequeSize),
 
 		opsApiRequestsTotal: promauto.NewCounter(prometheus.CounterOpts{
 			Namespace: sdk.MetricsNamespace,
@@ -87,15 +91,25 @@ func NewSimpleReplication(cfg *config.Config) *SimpleReplication {
 	return &repl
 }
 
-// TODO use chan here to avoid blocking on adding
+// TODO remove unnessasery copy of []bytes here
 func (s *SimpleReplication) Add(item sdk.ReplItem) {
 
 	s.opsApiRequestsTotal.Inc()
 
-	s.m.Lock()
-	defer s.m.Unlock()
-
-	s.NextLog.Data = append(s.NextLog.Data, item)
+loop:
+	for {
+		select {
+		case s.activeData <- item: // TODO remove unnessasery copy of []bytes here
+			break loop
+		default:
+			log.Printf("replication ActiveQueque size(%d) full. Locked record id: %d. Sleep for %d milliseconds.",
+				cap(s.activeData),
+				item.Value.GetRecId(),
+				QueueFullTimeoutMs,
+			)
+			time.Sleep(time.Duration(QueueFullTimeoutMs) * time.Millisecond) // Add waitingCounter Metrics
+		}
+	}
 }
 
 func (s *SimpleReplication) Start() {
@@ -106,6 +120,7 @@ func (s *SimpleReplication) Start() {
 		select {
 		case <-s.timer.C:
 			s.tick()
+			// TODO add sleep here to avoid busy loop
 		case <-s.done:
 			return
 		}
@@ -120,6 +135,48 @@ func (s *SimpleReplication) tick() {
 
 	s.m.Lock()
 	defer s.m.Unlock()
+
+	latest_id := sdk.LatestRecordId()
+
+loop:
+	for {
+		// TODO
+		// Some threads could be interupted after adding item to cache
+		// but before pushing it to replication chan. In that case we
+		// will not pull item and it will not be added to the binary log
+		// until the next log rotation. So it's mandatory to check recId
+		// in replayReplication() to prevent overwriting record by old one.
+
+		select {
+		case item := <-s.activeData: // TODO remove unnessasery copy of []bytes here
+
+			s.NextLog.Data = append(s.NextLog.Data, item)
+
+			if item.Value.GetRecId() > latest_id {
+				break loop
+			}
+
+		default:
+			break loop
+		}
+
+	}
+
+//	TODO another way just decide how much we'd like to pull
+//	Need to test it latelly
+// 	n := len(s.activeData)
+// loop1:
+// 	for i := 0; i < n; i++ { // pull no more than we had a moment ago
+// 		select {
+// 		case item := <-s.activeData: // TODO remove unnessasery copy of []bytes here
+
+// 			s.NextLog.Data = append(s.NextLog.Data, item)
+
+// 		default:
+// 			break loop1
+// 		}
+// 	}
+
 
 	nextlog_n := len(s.NextLog.Data)
 
